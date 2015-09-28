@@ -95,6 +95,12 @@ var WebSocketServer = require('ws').Server,
 var server = http.createServer(app);
 server.listen(process.env.PORT || 5000);
 
+
+app.get('/', function (req, res) {
+    res.write("Bedbug Studio' Sportiomo notification server - is active and running on the server.\n");
+    res.end();
+});
+
 /* SOCKETS CODE */
 
 //----------------
