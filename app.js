@@ -93,7 +93,7 @@ var WebSocketServer = require('ws').Server,
     express = require('express'),
     app = express();
 var server = http.createServer(app);
-server.listen(process.env.PORT || 5000);
+server.listen(process.env.PORT || 8080);
 
 /* SOCKETS CODE */
 
@@ -120,7 +120,7 @@ io.broadcast = function(data) {
         this.clients[i].send(data);
 };
 
-app.get('/', function(req, res, next) {
+
 
     io.on('connection', function(socket) {
 
@@ -135,6 +135,7 @@ app.get('/', function(req, res, next) {
         //        heartbeatTimeout = setTimeout(sendHeartbeat, 60000);
         //    }
         //}
+
         LOG("A user has connected");
 
         socket.on('subscribe', function (data,callback){
@@ -197,8 +198,8 @@ app.get('/', function(req, res, next) {
         });
     });
 
-
-    res.send(200, "Events server Instantiated");
+app.get('/', function(req, res, next) {
+    res.send(200, "All set");
 });
 
 
@@ -228,10 +229,11 @@ var removeUser = function(user) {
         }
     }
 };
+
 // Heartbeat
 var heartbeatTimeout = setInterval(sendHeartbeat, 10000);
 
 function sendHeartbeat () {
     if(io && users)
-    io.broadcast(JSON.stringify({users:users.length}));
+        io.broadcast(JSON.stringify({users:users.length}));
 }
