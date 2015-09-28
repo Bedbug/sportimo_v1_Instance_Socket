@@ -57,7 +57,10 @@ redisclient.on("end", function () {
 redisclient.subscribe("socketServers");
 
 redisclient.on("message", function (channel, message) {
-    //if(message=="ping") {console.log(process.pid+": Main Server heartbeat");return;}
+    if(message=="ping") {
+        //console.log(process.pid+": Main Server heartbeat");
+        return;
+    }
 
     if(LogStatus>0) {
         var obj = JSON.parse(JSON.parse(message).data);
