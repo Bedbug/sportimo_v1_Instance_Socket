@@ -95,12 +95,6 @@ var WebSocketServer = require('ws').Server,
 var server = http.createServer(app);
 server.listen(process.env.PORT || 5000);
 
-
-app.get('/', function (req, res) {
-    res.write("Bedbug Studio' Sportiomo notification server - is active and running on the server.\n");
-    res.end();
-});
-
 /* SOCKETS CODE */
 
 //----------------
@@ -126,72 +120,88 @@ io.broadcast = function(data) {
         this.clients[i].send(data);
 };
 
-io.on('connection', function(socket) {
+app.get('/', function(req, res, next) {
 
-    var user = addUser();
+    io.on('connection', function(socket) {
 
+        var user = addUser();
 
-    LOG("A user has connected");
+        // Heartbeat
+        //var heartbeatTimeout;
+        //
+        //function sendHeartbeat () {
+        //    if(socket){
+        //        socket.send(JSON.stringify({users:users.length}));
+        //        heartbeatTimeout = setTimeout(sendHeartbeat, 60000);
+        //    }
+        //}
+        LOG("A user has connected");
 
-    socket.on('subscribe', function (data,callback){
-        // Register user to to match channel
-        LOG(user.userID+" subscribed to:"+data.room);
-        user.channelID = data.room;
-    });
+        socket.on('subscribe', function (data,callback){
+            // Register user to to match channel
+            LOG(user.userID+" subscribed to:"+data.room);
+            user.channelID = data.room;
+        });
 
-    socket.on('unsubscribe', function (data){
-        // Unregister user from match channel;
-        LOG(user.userID+" unsubscribed from:"+ data.room);
-        user.channelID = 0;
-    });
-
-    socket.on('close', function () {
-        LOG("Client disconected");
-        //clearTimeout(heartbeatTimeout);
-        removeUser(user);
-        //ChannelEntry.remove(user,function(err) { LOG("error:"+err); })
-    });
-
-    socket.on("message", function(data){
-
-        var parsedData = JSON.parse(data);
-
-        if(parsedData.id)
-        {
-            // for(var i = 0; i<users.length; i++)
-            // {
-            //     if(users[i].userid == parsedData.id){
-            //     users[i].socket.send(JSON.stringify({message:"You are logged out because someone else logged in with your account"}));
-            //      users[i].socket.send(JSON.stringify({logout:true}));
-            //      //users[i].socket.disconnect();
-            //     }
-            // }
-
-            user.userID = parsedData.id;
-
-            //sendHeartbeat();
-            LOG("Registered user in server with ID: "+ user.userID);
-
-        }
-        else if(parsedData.subscribe)
-        {
-            user.channelID = parsedData.subscribe;
-
-            LOG(user.userID+" subscribed to: "+user.channelID);
-        }
-        else if (parsedData.unsubscribe)
-        {
-            LOG(user.userID+" unsubscribed from: "+ user.channelID);
+        socket.on('unsubscribe', function (data){
+            // Unregister user from match channel;
+            LOG(user.userID+" unsubscribed from:"+ data.room);
             user.channelID = 0;
+        });
 
-        }
-//      else if(parsedData.disconnect)
-//         {
-//             removeUser(user);
-//          socket.disconnect();
-//         }
+        socket.on('close', function () {
+            LOG("Client disconected");
+            //clearTimeout(heartbeatTimeout);
+            removeUser(user);
+            //ChannelEntry.remove(user,function(err) { LOG("error:"+err); })
+        });
+
+        socket.on("message", function(data){
+
+            var parsedData = JSON.parse(data);
+
+            if(parsedData.id)
+            {
+                // for(var i = 0; i<users.length; i++)
+                // {
+                //     if(users[i].userid == parsedData.id){
+                //     users[i].socket.send(JSON.stringify({message:"You are logged out because someone else logged in with your account"}));
+                //      users[i].socket.send(JSON.stringify({logout:true}));
+                //      //users[i].socket.disconnect();
+                //     }
+                // }
+
+                user.userID = parsedData.id;
+
+                //sendHeartbeat();
+                LOG("Registered user in server with ID: "+ user.userID);
+
+            }
+            else if(parsedData.subscribe)
+            {
+                user.channelID = parsedData.subscribe;
+
+                LOG(user.userID+" subscribed to: "+user.channelID);
+            }
+            else if (parsedData.unsubscribe)
+            {
+                LOG(user.userID+" unsubscribed from: "+ user.channelID);
+                user.channelID = 0;
+
+            }
+            //      else if(parsedData.disconnect)
+            //         {
+            //             removeUser(user);
+            //          socket.disconnect();
+            //         }
+        });
     });
+
+
+    res.send(200, "Events server Instantiated");
 });
+
+
 
 
 //----------------------------------------
@@ -218,7 +228,6 @@ var removeUser = function(user) {
         }
     }
 };
-
 // Heartbeat
 var heartbeatTimeout = setInterval(sendHeartbeat, 10000);
 
