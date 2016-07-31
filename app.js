@@ -26,9 +26,13 @@
  */
 
 
-var RedisIP = 'angelfish.redistogo.com';
-var RedisPort = 9455;
-var RedisAuth = 'd8deecf088b01d686f7f7cbfd11e96a9';
+// var RedisIP = 'angelfish.redistogo.com';
+// var RedisPort = 9455;
+// var RedisAuth = 'd8deecf088b01d686f7f7cbfd11e96a9';
+
+var RedisIP = 'pub-redis-11162.us-east-1-3.6.ec2.redislabs.com';
+var RedisPort = 11162;
+var RedisAuth = 'a21th21';
 
 // Initialize and connect to the Redis datastore
 var redis = require('redis');
@@ -58,7 +62,7 @@ redisclient.subscribe("socketServers");
 
 redisclient.on("message", function (channel, message) {
     if(message=="ping") {
-        //console.log(process.pid+": Main Server heartbeat");
+        console.log(process.pid+": Main Server heartbeat");
         return;
     }
 
@@ -79,7 +83,7 @@ redisclient.on("message", function (channel, message) {
         }
 
         //console.log(obj.event);
-        //  console.log(obj)
+         console.log(obj)
         if(obj.event=="new_game_event")
             console.log(process.pid+": BroadCasting: "+ obj.data.match_id+" | "+ obj.data.minute +"' "+ obj.data.event_name);
         else if(obj.event == "message")
@@ -123,7 +127,7 @@ var ActiveGames = {};
 function LOG(s)
 {
     if(LogStatus > 1)
-        console.log(process.pid+": "+s);
+        console.log(new Date()+"["+process.pid+"]: "+s);
 }
 
 //-------------------------------------
@@ -132,6 +136,8 @@ function LOG(s)
 var io = new WebSocketServer({server: server});
 
 io.broadcast = function(data) {
+    console.log("Clients: "+ this.clients.length+" | "+JSON.stringify(data));
+    
     for (var i in this.clients)
         this.clients[i].send(data);
 };
@@ -156,6 +162,8 @@ io.broadcast = function(data) {
 
         socket.on('subscribe', function (data,callback) {
             // Register user to to match channel
+            
+            if(user.userID == -1) LOG("This userid is empty");
             LOG(user.userID + " subscribed to:" + data.room);
             user.channelID = data.room;
 
@@ -183,37 +191,37 @@ io.broadcast = function(data) {
 
         socket.on("message", function(data){
 
-            // var parsedData = JSON.parse(data);
+            var parsedData = JSON.parse(data);
 
-            // if(parsedData.id)
-            // {
-            //     // for(var i = 0; i<users.length; i++)
-            //     // {
-            //     //     if(users[i].userid == parsedData.id){
-            //     //     users[i].socket.send(JSON.stringify({message:"You are logged out because someone else logged in with your account"}));
-            //     //      users[i].socket.send(JSON.stringify({logout:true}));
-            //     //      //users[i].socket.disconnect();
-            //     //     }
-            //     // }
+            if(parsedData.id)
+            {
+                // for(var i = 0; i<users.length; i++)
+                // {
+                //     if(users[i].userid == parsedData.id){
+                //     users[i].socket.send(JSON.stringify({message:"You are logged out because someone else logged in with your account"}));
+                //      users[i].socket.send(JSON.stringify({logout:true}));
+                //      //users[i].socket.disconnect();
+                //     }
+                // }
 
-            //     user.userID = parsedData.id;
+                user.userID = parsedData.id;
 
-            //     //sendHeartbeat();
-            //     LOG("Registered user in server with ID: "+ user.userID);
+                //sendHeartbeat();
+                LOG("Registered user in server with ID: "+ user.userID);
 
-            // }
-            // else if(parsedData.subscribe)
-            // {
-            //     user.channelID = parsedData.subscribe;
+            }
+            else if(parsedData.subscribe)
+            {
+                user.channelID = parsedData.subscribe;
 
-            //     LOG(user.userID+" subscribed to: "+user.channelID);
-            // }
-            // else if (parsedData.unsubscribe)
-            // {
-            //     LOG(user.userID+" unsubscribed from: "+ user.channelID);
-            //     user.channelID = 0;
+                LOG(user.userID+" subscribed to: "+user.channelID);
+            }
+            else if (parsedData.unsubscribe)
+            {
+                LOG(user.userID+" unsubscribed from: "+ user.channelID);
+                user.channelID = 0;
 
-            // }
+            }
             //      else if(parsedData.disconnect)
             //         {
             //             removeUser(user);
@@ -255,7 +263,7 @@ var removeUser = function(user) {
 };
 
 // Heartbeat
-var heartbeatTimeout = setInterval(sendHeartbeat, 10000);
+var heartbeatTimeout = setInterval(sendHeartbeat, 20000);
 
 function sendHeartbeat () {
     if(io && users)
